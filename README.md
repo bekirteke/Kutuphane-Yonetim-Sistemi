@@ -138,6 +138,4 @@ pytest
   - `library.db`
   - `__pycache__/`
 
----
 
-Hazırsınız! Sorularınız veya geliştirme önerileriniz için issue açabilirsiniz. 🙌
