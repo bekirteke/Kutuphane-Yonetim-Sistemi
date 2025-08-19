@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kütüphane Web Arayüzü</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            padding: 32px 32px 24px 32px;
+        }
+        h1 {
+            color: #4f46e5;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .table thead {
+            background: #6366f1;
+            color: #fff;
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: #f1f5f9;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 12px 0 rgba(99, 102, 241, 0.08);
+        }
+        .btn-primary {
+            background: #6366f1;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+        .btn-success {
+            background: #22c55e;
+            border: none;
+        }
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        .btn-danger {
+            background: #ef4444;
+            border: none;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .btn-warning {
+            background: #f59e42;
+            border: none;
+            color: #fff;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+            color: #fff;
+        }
+        .form-control:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+        }
+        #addResult.text-success, #updateResult.text-success {
+            color: #22c55e !important;
+        }
+        #addResult.text-danger, #updateResult.text-danger {
+            color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="mb-4 text-center">📚 Kütüphane Web Arayüzü</h1>
+    <div class="card mb-4 p-3 bg-light">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Kitap Ekle (ISBN ile)</h5>
+            <div class="input-group mb-3">
+                <input type="text" id="isbnInput" class="form-control" placeholder="ISBN" oninput="this.value=this.value.replace(/\s+/g,'')">
+                <button class="btn btn-primary" onclick="addBook()">Ekle</button>
+            </div>
+            <div id="addResult" class="fw-bold"></div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="text-secondary">Kitaplar</h4>
+        <div>
+            <input type="text" id="searchInput" class="form-control form-control-sm d-inline-block" style="width: 200px;" placeholder="Kitap adı ile ara" oninput="filterBooks()">
+            <button class="btn btn-secondary btn-sm ms-2" onclick="loadBooks()">Yenile</button>
+        </div>
+    </div>
+    <div class="table-responsive rounded shadow-sm">
+        <table class="table table-striped align-middle" id="booksTable">
+            <thead>
+                <tr><th>ISBN</th><th>Başlık</th><th>Yazar</th><th>Sil</th><th>Güncelle</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="card mt-4 p-3 bg-light">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Kitap Güncelle</h5>
+            <div class="row g-2 mb-2">
+                <div class="col-md-3">
+                    <input type="text" id="updateIsbn" class="form-control" placeholder="ISBN (değişmez)" readonly>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="updateTitle" class="form-control" placeholder="Yeni Başlık">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="updateAuthor" class="form-control" placeholder="Yeni Yazar">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success w-100" onclick="updateBook()">Güncelle</button>
+                </div>
+            </div>
+            <div id="updateResult" class="fw-bold"></div>
+        </div>
+    </div>
+</div>
+<script>
+const api = "http://localhost:8000";
+let allBooks = [];
+
+function loadBooks() {
+    fetch(api + "/books")
+        .then(r => r.json())
+        .then(data => {
+            allBooks = data;
+            renderBooks(data);
+        });
+}
+
+function renderBooks(books) {
+    const tbody = document.querySelector("#booksTable tbody");
+    tbody.innerHTML = "";
+    books.forEach(book => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${book.isbn}</td><td>${book.title}</td><td>${book.author}</td>` +
+            `<td><button class='btn btn-danger btn-sm' onclick='deleteBook("${book.isbn}")'>Sil</button></td>` +
+            `<td><button class='btn btn-warning btn-sm' onclick='fillUpdateForm("${book.isbn}", "${book.title}", "${book.author}")'>Düzenle</button></td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function filterBooks() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const filtered = allBooks.filter(book => book.title.toLowerCase().includes(search));
+    renderBooks(filtered);
+}
+
+function addBook() {
+    const raw = document.getElementById("isbnInput").value || "";
+    const isbn = raw.replace(/\s+/g, '').trim();
+    if (!isbn) {
+        document.getElementById("addResult").innerText = "ISBN boş olamaz.";
+        document.getElementById("addResult").className = "fw-bold text-danger";
+        return;
+    }
+    fetch(api + "/books", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isbn })
+    })
+    .then(r => r.json().then(data => ({status: r.status, data})))
+    .then(res => {
+        if (res.status === 200) {
+            document.getElementById("addResult").innerText = "Kitap eklendi!";
+            document.getElementById("addResult").className = "fw-bold text-success";
+            document.getElementById("isbnInput").value = "";
+            loadBooks();
+        } else {
+            document.getElementById("addResult").innerText = res.data.detail || "Hata oluştu.";
+            document.getElementById("addResult").className = "fw-bold text-danger";
+        }
+    });
+}
+
+function deleteBook(isbn) {
+    fetch(api + "/books/" + isbn, { method: "DELETE" })
+        .then(r => r.json())
+        .then(() => loadBooks());
+}
+
+function fillUpdateForm(isbn, title, author) {
+    document.getElementById("updateIsbn").value = isbn;
+    document.getElementById("updateTitle").value = title;
+    document.getElementById("updateAuthor").value = author;
+}
+
+function updateBook() {
+    const isbn = document.getElementById("updateIsbn").value;
+    const title = document.getElementById("updateTitle").value;
+    const author = document.getElementById("updateAuthor").value;
+    fetch(api + "/books/" + isbn, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, author })
+    })
+    .then(r => r.json().then(data => ({status: r.status, data})))
+    .then(res => {
+        if (res.status === 200) {
+            document.getElementById("updateResult").innerText = "Kitap güncellendi!";
+            document.getElementById("updateResult").className = "fw-bold text-success";
+            loadBooks();
+        } else {
+            document.getElementById("updateResult").innerText = res.data.detail || "Hata oluştu.";
+            document.getElementById("updateResult").className = "fw-bold text-danger";
+        }
+    });
+}
+
+window.onload = loadBooks;
+</script>
+</body>
+</html>
