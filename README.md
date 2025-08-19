@@ -100,14 +100,6 @@ http POST :8000/books isbn=9780140328721
 
 ---
 
-## 🔢 Örnek ISBN'ler
-- 9780140328721 (Matilda)
-- 9780439139601 (Harry Potter and the Goblet of Fire)
-- 9780199535675 (Ulysses)
-- 9780743273565 (The Great Gatsby)
-
----
-
 ## 🗂 Proje Yapısı
 ```
 Kütüphane Yönetim Sistemi/
